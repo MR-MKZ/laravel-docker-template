@@ -1,0 +1,47 @@
+services:
+  db:
+    image: mysql
+    container_name: ${DB_CONTAINER_NAME}
+    hostname: db
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    networks:
+      - laravel
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: ${PHPMYADMIN_CONTAINER_NAME}
+    ports:
+      - "3400:80"
+    depends_on:
+      - db
+    networks:
+      - laravel
+
+  backend:
+    container_name: ${BACKEND_CONTAINER_NAME}
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_DIR=${PROJECT_NAME}
+    volumes:
+      - ./${PROJECT_NAME}:/var/www/html/${PROJECT_NAME}
+      - ./apache2/sites-available:/etc/apache2/sites-available
+    ports:
+      - "8000:80"
+    working_dir: /var/www/html/${PROJECT_NAME}
+    depends_on:
+      - db
+      - phpmyadmin
+    networks:
+      - laravel
+
+networks:
+  laravel:
+    driver: bridge
